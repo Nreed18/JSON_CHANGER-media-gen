@@ -14,16 +14,16 @@ pip install -r requirements.txt
 ## Workflow
 
 ### 1. Ingest
-Use `main.py` to pull artwork or preview files. You can supply a media URL directly or adapt the script to read from spreadsheets or other sources.
+Use `main.py` to download a media URL and optionally look up metadata from a station library.
 
 ```bash
-python main.py --url "https://example.com/file.mp3"
+python main.py --url "https://example.com/file.mp3" --library station_library.xlsx
 ```
 
-The file is stored under the `media` directory and recorded in `media_lookup_cache.json`.
+The file is stored under the `media` directory, metadata is cached and everything is recorded in `media_lookup_cache.json`.
 
 ### 2. Review
-Run the FastAPI server to approve or reject downloaded items:
+The same command launches the review server. You can also start it without ingesting anything:
 
 ```bash
 python main.py
