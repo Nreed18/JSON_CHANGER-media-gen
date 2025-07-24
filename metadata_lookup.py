@@ -1,12 +1,17 @@
 import json
 import os
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 import pandas as pd
 import requests
 
 CACHE_FILE = Path('media_lookup_cache.json')
 MANUAL_REVIEW_FILE = Path('manual_review_queue.json')
+
+CACHE_LOCK = threading.Lock()
+REVIEW_LOCK = threading.Lock()
 
 ITUNES_LOOKUP_URL = 'https://itunes.apple.com/lookup'
 ITUNES_SEARCH_URL = 'https://itunes.apple.com/search'
@@ -43,13 +48,14 @@ def save_cache(cache: dict) -> None:
 
 def queue_for_manual_review(key: str, record: dict, results: list) -> None:
     """Add ambiguous record to manual review queue."""
-    queue = []
-    if MANUAL_REVIEW_FILE.exists():
-        with open(MANUAL_REVIEW_FILE, 'r', encoding='utf-8') as f:
-            queue = json.load(f)
-    queue.append({'key': key, 'record': record, 'results': results})
-    with open(MANUAL_REVIEW_FILE, 'w', encoding='utf-8') as f:
-        json.dump(queue, f, indent=2, ensure_ascii=False)
+    with REVIEW_LOCK:
+        queue = []
+        if MANUAL_REVIEW_FILE.exists():
+            with open(MANUAL_REVIEW_FILE, 'r', encoding='utf-8') as f:
+                queue = json.load(f)
+        queue.append({'key': key, 'record': record, 'results': results})
+        with open(MANUAL_REVIEW_FILE, 'w', encoding='utf-8') as f:
+            json.dump(queue, f, indent=2, ensure_ascii=False)
 
 
 def lookup_itunes_by_isrc(isrc: str) -> dict | None:
@@ -79,16 +85,16 @@ def search_itunes(artist: str, title: str) -> list:
         return []
 
 
-def process_library(library_path: str) -> None:
+def process_library(library_path: str, max_workers: int = 10) -> None:
     """Process an Excel library file and cache iTunes metadata."""
     df = load_station_library(library_path)
     cache = load_cache()
     updated = False
 
-    for _, row in df.iterrows():
+    def handle_row(row: pd.Series):
         key = generate_key(row)
         if key in cache:
-            continue
+            return None
 
         isrc = str(row.get('ISRC', '')).strip()
         result = None
@@ -101,14 +107,27 @@ def process_library(library_path: str) -> None:
                 result = results[0]
             else:
                 queue_for_manual_review(key, row.to_dict(), results)
-                continue
+                return None
 
         if result:
-            cache[key] = {"status": "auto", **result}
-            updated = True
+            return key, {"status": "auto", **result}
+        return None
+
+    futures = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for _, row in df.iterrows():
+            futures.append(executor.submit(handle_row, row))
+
+        for future in as_completed(futures):
+            res = future.result()
+            if res:
+                key, data = res
+                cache[key] = data
+                updated = True
 
     if updated:
-        save_cache(cache)
+        with CACHE_LOCK:
+            save_cache(cache)
 
 
 if __name__ == '__main__':
