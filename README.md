@@ -27,6 +27,7 @@ python notify_missing_media.py tracks.json
 The script will compile a list of tracks that lack artwork or a preview
 MP3 and send a plaintext email using the provided SMTP credentials.
 =======
+=======
 # JSON_CHANGER Media Generator
 
 This project provides a simple script (`main.py`) for downloading album artwork
