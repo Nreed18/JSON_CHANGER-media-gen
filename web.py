@@ -110,17 +110,14 @@ async def upload_library_form() -> HTMLResponse:
 
 @app.post("/library")
 async def upload_library(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    background_tasks: Optional[BackgroundTasks] = None,
 ) -> RedirectResponse:
     """Save uploaded library and process it in the background."""
     dest = Path("station_library.xlsx")
     contents = await file.read()
     dest.write_bytes(contents)
-    if background_tasks is not None:
-        background_tasks.add_task(process_library, str(dest))
-    else:
-        process_library(str(dest))
+    background_tasks.add_task(process_library, str(dest))
     return RedirectResponse(url="/review", status_code=303)
 
 
