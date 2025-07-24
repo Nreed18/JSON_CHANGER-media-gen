@@ -104,7 +104,7 @@ def process_library(library_path: str) -> None:
                 continue
 
         if result:
-            cache[key] = result
+            cache[key] = {"status": "auto", **result}
             updated = True
 
     if updated:
