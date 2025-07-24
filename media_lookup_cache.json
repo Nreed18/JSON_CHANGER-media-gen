@@ -1,0 +1,29 @@
+{
+  "track1": {
+    "status": "pending",
+    "candidates": [
+      {
+        "title": "Song A",
+        "artist": "Artist A",
+        "album": "Album A",
+        "preview": "previews/songA.mp3",
+        "artwork": "art/songA.jpg"
+      },
+      {
+        "title": "Song A Live",
+        "artist": "Artist A",
+        "album": "Album A Live",
+        "preview": "previews/songA_live.mp3",
+        "artwork": "art/songA_live.jpg"
+      }
+    ]
+  },
+  "track2": {
+    "status": "approved",
+    "title": "Some Title",
+    "artist": "Some Artist",
+    "album": "Some Album",
+    "preview": "previews/track2.mp3",
+    "artwork": "art/track2.jpg"
+  }
+}
