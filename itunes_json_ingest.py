@@ -21,18 +21,50 @@ def download_file(url: str, dest_path: str) -> None:
         f.write(response.read())
 
 
+def download_artwork(url: str, artist: str, album: str, base_dir: str = "media/music") -> str | None:
+    """Download artwork if needed and return local path."""
+    if not url:
+        return None
+    artist_dir = sanitize(artist or "Unknown Artist")
+    album_dir = sanitize(album or "Unknown Album")
+    target_dir = os.path.join(base_dir, artist_dir, album_dir)
+    ensure_dir(target_dir)
+    dest = os.path.join(target_dir, "artwork.jpg")
+    if os.path.exists(dest):
+        return dest
+    art_url = artwork_600(url)
+    download_file(art_url, dest)
+    return dest
+
+
+def download_preview(url: str, artist: str, album: str, base_dir: str = "media/music") -> str | None:
+    """Download preview if needed and return local path."""
+    if not url:
+        return None
+    artist_dir = sanitize(artist or "Unknown Artist")
+    album_dir = sanitize(album or "Unknown Album")
+    target_dir = os.path.join(base_dir, artist_dir, album_dir)
+    ensure_dir(target_dir)
+    filename = os.path.basename(urlparse(url).path) or "preview.mp3"
+    dest = os.path.join(target_dir, filename)
+    if os.path.exists(dest):
+        return dest
+    download_file(url, dest)
+    return dest
+
+
 def artwork_600(url100: str) -> str:
     """Convert a 100x100 artwork URL to 600x600."""
     return re.sub(r"100x100bb", "600x600bb", url100)
 
 
 def handle_result(result: dict, base_dir: str) -> None:
-    artist = sanitize(result.get('artistName', 'Unknown Artist'))
-    album = sanitize(result.get('collectionName', 'Unknown Album'))
+    artist = result.get('artistName', 'Unknown Artist')
+    album = result.get('collectionName', 'Unknown Album')
     artwork = result.get('artworkUrl100')
     preview = result.get('previewUrl')
 
-    target_dir = os.path.join(base_dir, artist, album)
+    target_dir = os.path.join(base_dir, sanitize(artist), sanitize(album))
     ensure_dir(target_dir)
 
     approve = input(f"Download media for {artist} - {album}? [y/N]: ")
@@ -40,22 +72,16 @@ def handle_result(result: dict, base_dir: str) -> None:
         return
 
     if artwork:
-        artwork_path = os.path.join(target_dir, 'artwork.jpg')
-        if not os.path.exists(artwork_path):
-            art_url = artwork_600(artwork)
-            try:
-                download_file(art_url, artwork_path)
-            except Exception as e:
-                print(f"Failed to download artwork: {e}", file=sys.stderr)
+        try:
+            download_artwork(artwork, artist, album, base_dir)
+        except Exception as e:
+            print(f"Failed to download artwork: {e}", file=sys.stderr)
 
     if preview:
-        filename = os.path.basename(urlparse(preview).path) or 'preview.mp3'
-        preview_path = os.path.join(target_dir, filename)
-        if not os.path.exists(preview_path):
-            try:
-                download_file(preview, preview_path)
-            except Exception as e:
-                print(f"Failed to download preview: {e}", file=sys.stderr)
+        try:
+            download_preview(preview, artist, album, base_dir)
+        except Exception as e:
+            print(f"Failed to download preview: {e}", file=sys.stderr)
 
 
 def ingest_from_file(json_path: str, dest: str = 'media/music') -> None:
