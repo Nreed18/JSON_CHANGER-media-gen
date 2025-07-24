@@ -1,0 +1,7 @@
+[
+  {"title": "Track 1", "artwork": "track1.jpg", "preview_mp3": "track1.mp3"},
+  {"title": "Track 2", "artwork": "", "preview_mp3": "track2.mp3"},
+  {"title": "Track 3", "artwork": "track3.jpg", "preview_mp3": ""},
+  {"title": "Track 4", "artwork": "", "preview_mp3": ""}
+]
+
