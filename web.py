@@ -28,6 +28,12 @@ def render(template: str, **context: str) -> str:
     return templates.get_template(template).render(**context)
 
 
+@app.get("/", response_class=HTMLResponse)
+async def index() -> RedirectResponse:
+    """Redirect to the review list."""
+    return RedirectResponse(url="/review")
+
+
 @app.get("/review", response_class=HTMLResponse)
 async def review_list() -> HTMLResponse:
     cache = load_cache()
