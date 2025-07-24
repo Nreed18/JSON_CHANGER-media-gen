@@ -4,6 +4,7 @@ import os
 import sys
 from urllib.parse import urlparse
 
+import re
 from urllib.request import urlopen
 
 
@@ -22,7 +23,8 @@ def download_file(url: str, dest_path: str) -> None:
 
 
 def artwork_600(url100: str) -> str:
-    return url100.replace('100x100', '600x600')
+    """Convert a 100x100 artwork URL to 600x600."""
+    return re.sub(r"100x100bb", "600x600bb", url100)
 
 
 def handle_result(result: dict, base_dir: str) -> None:
