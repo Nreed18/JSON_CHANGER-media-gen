@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import json
-from fastapi import FastAPI, Form, HTTPException, File, UploadFile
+from fastapi import FastAPI, Form, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
@@ -40,7 +40,8 @@ async def review_list() -> HTMLResponse:
     cache = load_cache()
     items_html = ""
     for key, entry in cache.items():
-        if entry.get("status") != "approved":
+        status = entry.get("status")
+        if status not in {"approved", "denied"}:
             items_html += f'<li><a href="/review/{key}">{key}</a></li>'
     body = render("review_list.html", items=items_html)
     return HTMLResponse(body)
@@ -67,7 +68,8 @@ async def review_item(key: str) -> HTMLResponse:
             f"<ul>{meta_html}</ul>"
             f'<form method="post">'
             f'<input type="hidden" name="candidate" value="{idx}">' \
-            f"<button type=\"submit\">Approve</button>" \
+            f'<button type="submit" name="action" value="approve">Approve</button>' \
+            f'<button type="submit" name="action" value="deny">Deny</button>' \
             f"</form>" \
             f"</div>\n"
         )
@@ -76,7 +78,11 @@ async def review_item(key: str) -> HTMLResponse:
 
 
 @app.post("/review/{key}")
-async def approve_item(key: str, candidate: int = Form(...)) -> RedirectResponse:
+async def approve_item(
+    key: str,
+    candidate: int = Form(...),
+    action: str = Form("approve"),
+) -> RedirectResponse:
     cache = load_cache()
     entry = cache.get(key)
     if not entry:
@@ -85,9 +91,12 @@ async def approve_item(key: str, candidate: int = Form(...)) -> RedirectResponse
     cand_list = entry.get("candidates", [])
     if candidate < 0 or candidate >= len(cand_list):
         raise HTTPException(status_code=400)
-    cand = cand_list[candidate]
-    cand["status"] = "approved"
-    cache[key] = cand
+    if action == "approve":
+        cand = cand_list[candidate]
+        cand["status"] = "approved"
+        cache[key] = cand
+    else:
+        cache[key] = {"status": "denied"}
     save_cache(cache)
     return RedirectResponse(url="/review", status_code=303)
 
@@ -100,12 +109,18 @@ async def upload_library_form() -> HTMLResponse:
 
 
 @app.post("/library")
-async def upload_library(file: UploadFile = File(...)) -> RedirectResponse:
-    """Save uploaded library and process it."""
+async def upload_library(
+    file: UploadFile = File(...),
+    background_tasks: Optional[BackgroundTasks] = None,
+) -> RedirectResponse:
+    """Save uploaded library and process it in the background."""
     dest = Path("station_library.xlsx")
     contents = await file.read()
     dest.write_bytes(contents)
-    process_library(str(dest))
+    if background_tasks is not None:
+        background_tasks.add_task(process_library, str(dest))
+    else:
+        process_library(str(dest))
     return RedirectResponse(url="/review", status_code=303)
 
 
