@@ -30,6 +30,7 @@ python main.py
 ```
 
 Open `http://localhost:8000` and mark each entry as approved. Approved files remain available in the `media` folder.
+You can upload a replacement station library at `/library` if the metadata source changes.
 
 ### 3. Download
 After approval you can process the assets further or transfer them to their final destination. The status field (`auto` or `approved`) is stored alongside the file path in `media_lookup_cache.json`.

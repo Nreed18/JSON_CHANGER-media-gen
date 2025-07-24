@@ -2,10 +2,11 @@ from pathlib import Path
 from typing import Dict
 
 import json
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
+from metadata_lookup import process_library
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -88,6 +89,23 @@ async def approve_item(key: str, candidate: int = Form(...)) -> RedirectResponse
     cand["status"] = "approved"
     cache[key] = cand
     save_cache(cache)
+    return RedirectResponse(url="/review", status_code=303)
+
+
+@app.get("/library", response_class=HTMLResponse)
+async def upload_library_form() -> HTMLResponse:
+    """Return an upload form for the station library."""
+    body = render("upload_library.html")
+    return HTMLResponse(body)
+
+
+@app.post("/library")
+async def upload_library(file: UploadFile = File(...)) -> RedirectResponse:
+    """Save uploaded library and process it."""
+    dest = Path("station_library.xlsx")
+    contents = await file.read()
+    dest.write_bytes(contents)
+    process_library(str(dest))
     return RedirectResponse(url="/review", status_code=303)
 
 
