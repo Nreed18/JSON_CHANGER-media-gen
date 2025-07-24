@@ -1,0 +1,9 @@
+pandas
+openpyxl
+requests
+tqdm
+fastapi
+jinja2
+uvicorn
+Flask
+python-dotenv

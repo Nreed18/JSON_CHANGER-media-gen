@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Media Approval</title>
+</head>
+<body>
+<h1>Media Items</h1>
+<ul>
+{% for url, info in media.items() %}
+    <li>
+        <a href="{{ info['path'] }}">{{ url }}</a>
+        {% if info['approved'] %}
+            <span>Approved</span>
+        {% else %}
+            <form action="/approve" method="post" style="display:inline;">
+                <input type="hidden" name="url" value="{{ url }}">
+                <button type="submit">Approve</button>
+            </form>
+        {% endif %}
+    </li>
+{% endfor %}
+</ul>
+</body>
+</html>
