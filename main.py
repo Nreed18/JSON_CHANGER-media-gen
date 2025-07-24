@@ -76,7 +76,7 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-=======
+
 import json
 import os
 from pathlib import Path
@@ -193,7 +193,7 @@ def process_library(library_path: str) -> None:
 if __name__ == "__main__":
     library_file = os.environ.get('STATION_LIBRARY', 'station_library.xlsx')
     process_library(library_file)
-=======
+
 import argparse
 import json
 from pathlib import Path
