@@ -9,7 +9,7 @@
 {% for url, info in media.items() %}
     <li>
         <a href="{{ info['path'] }}">{{ url }}</a>
-        {% if info['approved'] %}
+        {% if info['status'] == 'approved' %}
             <span>Approved</span>
         {% else %}
             <form action="/approve" method="post" style="display:inline;">

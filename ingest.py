@@ -25,10 +25,10 @@ def download_media(url: str, filename: str | None = None) -> Path:
 
 def update_cache(url: str, path: Path) -> None:
     """Record downloaded media in the cache."""
-    data = {}
+    data: dict = {}
     if CACHE_FILE.exists():
         data = json.loads(CACHE_FILE.read_text())
-    data[url] = {"path": str(path), "approved": False}
+    data[url] = {"path": str(path), "status": "auto"}
     CACHE_FILE.write_text(json.dumps(data, indent=2))
 
 
